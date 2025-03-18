@@ -708,6 +708,21 @@ const Codegen = struct {
         } }, .void));
     }
 
+    pub fn emitFloatEqual(self: *Codegen, dst: Register, left: Register, right: Register) !void {
+        ensureAlignment(left, .single_item);
+        ensureType(left, .f32);
+        ensureAlignment(right, .single_item);
+        ensureType(right, .f32);
+        ensureAlignment(dst, .single_item);
+        ensureType(dst, .bool);
+
+        try self.appendBytecode(MMTypes.Bytecode.init(.{ .EQf = .{
+            .dst_idx = dst.addr(),
+            .src_a_idx = left.addr(),
+            .src_b_idx = right.addr(),
+        } }, .void));
+    }
+
     pub fn emitSafePtrNotEqual(self: *Codegen, dst: Register, left: Register, right: Register) !void {
         ensureAlignment(left, .single_item);
         ensureType(left, .safe_ptr);
@@ -843,6 +858,21 @@ const Codegen = struct {
         } }, .void));
     }
 
+    pub fn emitFloatGreaterThanOrEqual(self: *Codegen, dst: Register, left: Register, right: Register) !void {
+        ensureAlignment(left, .single_item);
+        ensureType(left, .f32);
+        ensureAlignment(right, .single_item);
+        ensureType(right, .f32);
+        ensureAlignment(dst, .single_item);
+        ensureType(dst, .bool);
+
+        try self.appendBytecode(MMTypes.Bytecode.init(.{ .GTEf = .{
+            .dst_idx = dst.addr(),
+            .src_a_idx = left.addr(),
+            .src_b_idx = right.addr(),
+        } }, .void));
+    }
+
     pub fn emitIntLessThan(self: *Codegen, dst: Register, left: Register, right: Register) !void {
         ensureAlignment(left, .single_item);
         ensureType(left, .s32);
@@ -942,6 +972,21 @@ const Codegen = struct {
         ensureType(dst, .s32);
 
         try self.appendBytecode(MMTypes.Bytecode.init(.{ .SUBi = .{
+            .dst_idx = dst.addr(),
+            .src_a_idx = left.addr(),
+            .src_b_idx = right.addr(),
+        } }, .void));
+    }
+
+    pub fn emitSubtractFloat(self: *Codegen, dst: Register, left: Register, right: Register) !void {
+        ensureAlignment(left, .single_item);
+        ensureType(left, .f32);
+        ensureAlignment(right, .single_item);
+        ensureType(right, .f32);
+        ensureAlignment(dst, .single_item);
+        ensureType(dst, .f32);
+
+        try self.appendBytecode(MMTypes.Bytecode.init(.{ .SUBf = .{
             .dst_idx = dst.addr(),
             .src_a_idx = left.addr(),
             .src_b_idx = right.addr(),
@@ -1876,9 +1921,12 @@ fn compileExpression(
                             else => std.debug.panic("TODO: {s} binary op type for s32", .{@tagName(binary_type)}),
                         },
                         .f32 => switch (binary_type) {
+                            .equal => try codegen.emitFloatEqual(register, lefthand, righthand),
                             .greater_than => try codegen.emitFloatGreaterThan(register, lefthand, righthand),
+                            .greater_than_or_equal => try codegen.emitFloatGreaterThanOrEqual(register, lefthand, righthand),
                             .less_than_or_equal => try codegen.emitFloatLessThanOrEqual(register, lefthand, righthand),
                             .addition => try codegen.emitAddFloat(register, lefthand, righthand),
+                            .subtraction => try codegen.emitSubtractFloat(register, lefthand, righthand),
                             else => std.debug.panic("TODO: {s} binary op type for f32", .{@tagName(binary_type)}),
                         },
                         .safe_ptr => switch (binary_type) {
