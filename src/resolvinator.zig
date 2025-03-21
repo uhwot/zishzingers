@@ -1513,7 +1513,7 @@ fn resolveExpression(
                 progress_node,
             );
         },
-        .addition, .subtraction => |math_op| {
+        .addition, .subtraction, .multiplication => |math_op| {
             try self.resolveExpression(
                 math_op.lefthand,
                 null,

@@ -1851,6 +1851,7 @@ fn compileExpression(
         inline .bitwise_and,
         .addition,
         .subtraction,
+        .multiplication,
         .not_equal,
         .equal,
         .greater_than,
@@ -1862,7 +1863,7 @@ fn compileExpression(
             const binary_righthand_type = codegen.genny.type_intern_pool.get(binary.righthand.type);
 
             //Assert the types are equal if its not a pointer we are dealing with, else make sure that the other operand is an s32
-            if ((binary_type == .addition or binary_type == .subtraction) and binary_lefthand_type.resolved == .pointer)
+            if ((binary_type == .addition or binary_type == .subtraction or binary_type == .multiplication) and binary_lefthand_type.resolved == .pointer)
                 std.debug.assert(binary_righthand_type.resolved.fish.machine_type == .s32)
             else
                 std.debug.assert(binary_lefthand_type.resolved.eql(binary_righthand_type.resolved));
@@ -1875,7 +1876,7 @@ fn compileExpression(
 
                 break :add_reg if (result_register == null or needs_intermediary)
                     .{ try codegen.register_allocator.allocate(switch (binary_type) {
-                        .bitwise_and, .addition, .subtraction => binary_lefthand_type.resolved.machineType(),
+                        .bitwise_and, .addition, .subtraction, .multiplication => binary_lefthand_type.resolved.machineType(),
                         .not_equal, .equal, .greater_than, .less_than, .greater_than_or_equal, .less_than_or_equal => .bool,
                         else => @compileError("Missing register type resolution"),
                     }), needs_intermediary }
@@ -1914,6 +1915,7 @@ fn compileExpression(
                             .bitwise_and => try codegen.emitIntBitwiseAnd(register, lefthand, righthand),
                             .addition => try codegen.emitAddInt(register, lefthand, righthand),
                             .subtraction => try codegen.emitSubtractInt(register, lefthand, righthand),
+                            .multiplication => try codegen.emitMultiplyInt(register, lefthand, righthand),
                             .greater_than => try codegen.emitIntGreaterThan(register, lefthand, righthand),
                             .less_than => try codegen.emitIntLessThan(register, lefthand, righthand),
                             .greater_than_or_equal => try codegen.emitIntGreaterThanOrEqual(register, lefthand, righthand),
